@@ -53,7 +53,7 @@ internal static class RoomUiFormatter
     public static string GetRoomName(RoomDto room)
     {
         if (room == null || string.IsNullOrWhiteSpace(room.roomName))
-            return "Unnamed Room";
+            return "Unnamed Quarry";
 
         return room.roomName.Trim();
     }

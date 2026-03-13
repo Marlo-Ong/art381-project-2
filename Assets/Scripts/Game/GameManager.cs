@@ -19,6 +19,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private RoomBrowserUI roomBrowserUI;
     [SerializeField] private GameObject[] gameplayObjectsToToggle;
     [SerializeField] private TokenPickup[] tokenPickupsToReset;
+    [SerializeField] private RootSoundEffectPlayer soundEffectPlayer;
 
     private GameState currentState;
     private bool isSubmissionInFlight;
@@ -44,6 +45,9 @@ public class GameManager : MonoBehaviour
 
         if (roomBrowserUI == null)
             roomBrowserUI = FindFirstObjectByType<RoomBrowserUI>(FindObjectsInactive.Include);
+
+        if (soundEffectPlayer == null)
+            soundEffectPlayer = RootSoundEffectPlayer.FindInstance();
     }
 
     private void Start()
@@ -322,6 +326,7 @@ public class GameManager : MonoBehaviour
         }
 
         playerSession.ResetRunTokens();
+        PlayTokensDepositedSound();
         ShowStartMenu("Deposit complete.");
     }
 
@@ -396,5 +401,14 @@ public class GameManager : MonoBehaviour
     private void LogFailedRequest(string requestName, string reason)
     {
         UiRequestLogger.LogFailedRequest(this, nameof(GameManager), requestName, reason);
+    }
+
+    private void PlayTokensDepositedSound()
+    {
+        if (soundEffectPlayer == null)
+            soundEffectPlayer = RootSoundEffectPlayer.FindInstance();
+
+        if (soundEffectPlayer != null)
+            soundEffectPlayer.PlaySoundEffect(RootSoundEffectPlayer.TokensDepositedSoundEffectIndex);
     }
 }

@@ -47,15 +47,20 @@ public class RootRoomFlowController : MonoBehaviour
     private RootSceneLoader sceneLoader;
     private MockApiRoomService runtimeRoomService;
     private PlayerSession activePlayerSession;
+    private RootSoundEffectPlayer soundEffectPlayer;
     private Transform viewGummyWorm;
     private Vector3 viewGummyInitialScale = Vector3.one;
     private Vector2 browserScrollPosition;
 
     private RoomDto selectedRoom;
-    private string playerName = "Player";
+    private string playerName = "MyQuarry";
+    private string pendingRoomName = "MyQuarry";
     private string statusMessage = string.Empty;
+    private string lastSuggestedRoomName = "NewQuarry";
     private int currentRunTokens;
     private bool hasViewGummyInitialScale;
+    private bool hasCreatedRoomThisPlaythrough;
+    private bool isCreatingRoom;
     private bool isLoadingRooms;
     private bool isDepositingTokens;
     private bool browserOpen;
@@ -76,6 +81,7 @@ public class RootRoomFlowController : MonoBehaviour
 
         instance = this;
         sceneLoader = GetComponent<RootSceneLoader>();
+        soundEffectPlayer = GetComponent<RootSoundEffectPlayer>();
         EnsureRuntimeRoomService();
     }
 
@@ -138,7 +144,12 @@ public class RootRoomFlowController : MonoBehaviour
     private void OpenBrowser()
     {
         browserOpen = true;
-        SetStatus("Select a room to open it.", false);
+        SyncPendingRoomName(playerName);
+        SetStatus(
+            hasCreatedRoomThisPlaythrough
+                ? "Select a quarry to open it."
+                : "Select a quarry to open it, or create a new one.",
+            false);
 
         if (autoRefreshBrowserOnOpen || browserRooms.Count == 0)
             LoadRooms(currentBrowseMode);
@@ -154,7 +165,7 @@ public class RootRoomFlowController : MonoBehaviour
 
     private void LoadRooms(BrowseMode mode)
     {
-        if (isLoadingRooms || isDepositingTokens)
+        if (isLoadingRooms || isDepositingTokens || isCreatingRoom)
             return;
 
         StartCoroutine(LoadRoomsRoutine(mode));
@@ -165,7 +176,7 @@ public class RootRoomFlowController : MonoBehaviour
         EnsureRuntimeRoomService();
         if (runtimeRoomService == null)
         {
-            SetStatus("Room service is not configured.", true);
+            SetStatus("Quarry service is not configured.", true);
             yield break;
         }
 
@@ -173,7 +184,7 @@ public class RootRoomFlowController : MonoBehaviour
         currentBrowseMode = mode;
         var selectedRoomId = selectedRoom != null ? selectedRoom.id : string.Empty;
         browserRooms.Clear();
-        SetStatus(mode == BrowseMode.Recent ? "Loading recent rooms..." : "Loading leaderboard...", false);
+        SetStatus(mode == BrowseMode.Recent ? "Loading recent quarries..." : "Loading popular quarries...", false);
 
         List<RoomDto> loadedRooms = null;
         string requestError = null;
@@ -193,7 +204,7 @@ public class RootRoomFlowController : MonoBehaviour
         if (loadedRooms == null || loadedRooms.Count == 0)
         {
             selectedRoom = null;
-            SetStatus("No rooms were returned by the API.", false);
+            SetStatus("No quarries were returned by the API.", false);
             yield break;
         }
 
@@ -210,7 +221,7 @@ public class RootRoomFlowController : MonoBehaviour
             }
         }
 
-        SetStatus(mode == BrowseMode.Recent ? "Showing recent rooms." : "Showing leaderboard.", false);
+        SetStatus(mode == BrowseMode.Recent ? "Showing recent quarries." : "Showing popular quarries.", false);
     }
 
     private void ViewRoom(RoomDto room)
@@ -236,10 +247,73 @@ public class RootRoomFlowController : MonoBehaviour
 
     private void DepositSelectedRoomTokens()
     {
-        if (isLoadingRooms || isDepositingTokens || selectedRoom == null || currentRunTokens <= 0)
+        if (isLoadingRooms || isDepositingTokens || isCreatingRoom || selectedRoom == null || currentRunTokens <= 0)
             return;
 
         StartCoroutine(DepositTokensRoutine());
+    }
+
+    private void CreateRoomFromCurrentTokens()
+    {
+        if (isLoadingRooms || isDepositingTokens || isCreatingRoom)
+            return;
+
+        if (hasCreatedRoomThisPlaythrough)
+        {
+            SetStatus("You can only create one quarry per playthrough.", true);
+            return;
+        }
+
+        if (currentRunTokens <= 0)
+        {
+            SetStatus("Collect artifacts before creating a quarry.", true);
+            return;
+        }
+
+        StartCoroutine(CreateRoomRoutine());
+    }
+
+    private IEnumerator CreateRoomRoutine()
+    {
+        EnsureRuntimeRoomService();
+        if (runtimeRoomService == null)
+        {
+            SetStatus("Quarry service is not configured.", true);
+            yield break;
+        }
+
+        isCreatingRoom = true;
+        SetStatus("Creating quarry...", false);
+
+        var timestamp = ApiDateUtils.GetCurrentUtcIsoString();
+        var createRequest = new CreateRoomRequest
+        {
+            roomName = ResolvePendingRoomName(),
+            totalTokens = Mathf.Max(0, currentRunTokens),
+            createdAt = timestamp,
+            updatedAt = timestamp
+        };
+
+        RoomDto createdRoom = null;
+        string requestError = null;
+        yield return runtimeRoomService.CreateRoom(
+            createRequest,
+            room => createdRoom = room,
+            error => requestError = error);
+
+        isCreatingRoom = false;
+
+        if (!string.IsNullOrWhiteSpace(requestError) || createdRoom == null)
+        {
+            SetStatus(string.IsNullOrWhiteSpace(requestError) ? "Quarry creation failed." : requestError, true);
+            yield break;
+        }
+
+        hasCreatedRoomThisPlaythrough = true;
+        UpsertBrowserRoom(createdRoom);
+        SetCurrentRunTokens(0);
+        SetStatus("Quarry created.", false);
+        ViewRoom(createdRoom);
     }
 
     private IEnumerator DepositTokensRoutine()
@@ -247,12 +321,12 @@ public class RootRoomFlowController : MonoBehaviour
         EnsureRuntimeRoomService();
         if (runtimeRoomService == null)
         {
-            SetStatus("Room service is not configured.", true);
+            SetStatus("Quarry service is not configured.", true);
             yield break;
         }
 
         isDepositingTokens = true;
-        SetStatus("Depositing tokens...", false);
+        SetStatus("Depositing artifacts...", false);
 
         var tokensToDeposit = Mathf.Max(0, currentRunTokens);
         RoomDto updatedRoom = null;
@@ -272,11 +346,10 @@ public class RootRoomFlowController : MonoBehaviour
         }
 
         selectedRoom = updatedRoom;
-        for (var i = 0; i < browserRooms.Count; i++)
-            if (browserRooms[i] != null && browserRooms[i].id == updatedRoom.id)
-                browserRooms[i] = updatedRoom;
+        UpsertBrowserRoom(updatedRoom);
 
         SetCurrentRunTokens(0);
+        PlayTokensDepositedSound();
         ApplySelectedRoomToViewScene();
         SetStatus("Deposit complete.", false);
     }
@@ -311,6 +384,7 @@ public class RootRoomFlowController : MonoBehaviour
         activePlayerSession.TokenCountChanged += HandleTokenCountChanged;
         playerName = activePlayerSession.PlayerName;
         currentRunTokens = activePlayerSession.CurrentRunTokens;
+        SyncPendingRoomName(playerName);
     }
 
     private void DetachPlayerSession()
@@ -335,6 +409,7 @@ public class RootRoomFlowController : MonoBehaviour
     private void HandlePlayerNameChanged(string newPlayerName)
     {
         playerName = string.IsNullOrWhiteSpace(newPlayerName) ? "Player" : newPlayerName.Trim();
+        SyncPendingRoomName(playerName);
     }
 
     private void HandleTokenCountChanged(int newTokenCount)
@@ -394,6 +469,15 @@ public class RootRoomFlowController : MonoBehaviour
         runtimeRoomService.Configure(config, client, usePatchForUpdates);
     }
 
+    private void PlayTokensDepositedSound()
+    {
+        if (soundEffectPlayer == null)
+            soundEffectPlayer = GetComponent<RootSoundEffectPlayer>();
+
+        if (soundEffectPlayer != null)
+            soundEffectPlayer.PlaySoundEffect(RootSoundEffectPlayer.TokensDepositedSoundEffectIndex);
+    }
+
     private void UpdateCursorOwnership()
     {
         var shouldUnlock = browserOpen || ShouldShowViewOverlay();
@@ -440,6 +524,7 @@ public class RootRoomFlowController : MonoBehaviour
         return !browserOpen &&
                !isLoadingRooms &&
                !isDepositingTokens &&
+               !isCreatingRoom &&
                GetActiveSceneName() == collectSceneName;
     }
 
@@ -467,6 +552,8 @@ public class RootRoomFlowController : MonoBehaviour
 
     private void OnGUI()
     {
+        DrawCollectSceneArtifactCount();
+
         if (ShouldShowCollectScenePrompt())
             DrawCollectScenePrompt();
 
@@ -480,31 +567,64 @@ public class RootRoomFlowController : MonoBehaviour
     private void DrawCollectScenePrompt()
     {
 #if ENABLE_INPUT_SYSTEM
-        var label = $"Press {openBrowserKey} to browse rooms";
+        var label = $"Press {openBrowserKey} to browse quarries";
 #else
-        var label = "Browse rooms";
+        var label = "Browse quarries";
 #endif
         var size = GUI.skin.box.CalcSize(new GUIContent(label));
         var rect = new Rect(16f, Screen.height - size.y - 24f, size.x + 20f, size.y + 10f);
         GUI.Box(rect, label);
     }
 
+    private void DrawCollectSceneArtifactCount()
+    {
+        var label = "Collected artifacts: " + Mathf.Max(0, currentRunTokens);
+        var size = GUI.skin.box.CalcSize(new GUIContent(label));
+        var width = size.x + 20f;
+        var height = size.y + 10f;
+        var rect = new Rect(Screen.width - width - 16f, Screen.height - height - 24f, width, height);
+        GUI.Box(rect, label);
+    }
+
     private void DrawBrowserOverlay()
     {
-        GUILayout.BeginArea(new Rect(16f, 16f, 420f, 430f), GUI.skin.window);
-        GUILayout.Label("Rooms");
-        GUILayout.Label($"Player: {playerName}");
-        GUILayout.Label($"Tokens: {currentRunTokens}");
+        var areaHeight = Mathf.Min(Screen.height - 32f, 520f);
+        var scrollHeight = Mathf.Max(120f, areaHeight - 250f);
+
+        GUILayout.BeginArea(new Rect(16f, 16f, 420f, areaHeight), GUI.skin.window);
+
+        if (!hasCreatedRoomThisPlaythrough)
+        {
+            GUILayout.Label("New Quarry Name");
+
+            GUI.enabled = !isLoadingRooms && !isDepositingTokens && !isCreatingRoom && !hasCreatedRoomThisPlaythrough;
+            pendingRoomName = GUILayout.TextField(pendingRoomName ?? string.Empty);
+
+            GUI.enabled = !isLoadingRooms &&
+                          !isDepositingTokens &&
+                          !isCreatingRoom &&
+                          currentRunTokens > 0;
+            if (GUILayout.Button("Create New Quarry"))
+                CreateRoomFromCurrentTokens();
+
+            GUI.enabled = true;
+            if (currentRunTokens <= 0)
+                GUILayout.Label("Collect at least one artifact to create a quarry.");
+
+            GUILayout.Space(8f);
+        }
+
+        GUILayout.Label("Quarries");
 
         GUILayout.BeginHorizontal();
-        GUI.enabled = !isLoadingRooms && !isDepositingTokens;
-        if (GUILayout.Button("Recent"))
+        GUI.enabled = !isLoadingRooms && !isDepositingTokens && !isCreatingRoom;
+        if (GUILayout.Button("By Recent"))
             LoadRooms(BrowseMode.Recent);
 
-        if (GUILayout.Button("Leaderboard"))
+        if (GUILayout.Button("By Popular"))
             LoadRooms(BrowseMode.Leaderboard);
 
-        if (GUILayout.Button("Cancel"))
+        if (GUILayout.Button("Close Menu"))
             CloseBrowser();
 
         GUI.enabled = true;
@@ -513,11 +633,11 @@ public class RootRoomFlowController : MonoBehaviour
         if (!string.IsNullOrWhiteSpace(statusMessage))
             GUILayout.Label(statusMessage);
 
-        GUILayout.Label("Click a room to open it in ViewScene.");
-        browserScrollPosition = GUILayout.BeginScrollView(browserScrollPosition, GUILayout.Height(290f));
+        GUILayout.Space(8f);
+        browserScrollPosition = GUILayout.BeginScrollView(browserScrollPosition, GUILayout.Height(scrollHeight));
 
         if (browserRooms.Count == 0 && !isLoadingRooms)
-            GUILayout.Label("No rooms loaded yet.");
+            GUILayout.Label("No quarries loaded yet.");
 
         for (var i = 0; i < browserRooms.Count; i++)
         {
@@ -526,7 +646,7 @@ public class RootRoomFlowController : MonoBehaviour
                 continue;
 
             var label = string.Format(
-                "{0}{1} | {2} tokens | {3}",
+                "{0}{1} | {2} artifacts | {3}",
                 selectedRoom != null && selectedRoom.id == room.id ? "> " : string.Empty,
                 RoomUiFormatter.GetRoomName(room),
                 Mathf.Max(0, room.totalTokens),
@@ -544,42 +664,25 @@ public class RootRoomFlowController : MonoBehaviour
     {
         GUILayout.BeginArea(new Rect(Screen.width - 300f, 16f, 284f, 220f), GUI.skin.window);
         GUILayout.Label(RoomUiFormatter.GetRoomName(selectedRoom));
-        GUILayout.Label("Room Tokens: " + Mathf.Max(0, selectedRoom.totalTokens));
-        GUILayout.Label("Your Tokens: " + currentRunTokens);
+        GUILayout.Label("Artifacts deposited in this quarry: " + Mathf.Max(0, selectedRoom.totalTokens));
 
         if (!string.IsNullOrWhiteSpace(statusMessage))
             GUILayout.Label(statusMessage);
 
-        GUI.enabled = !isLoadingRooms && !isDepositingTokens;
-        if (GUILayout.Button("View Other Rooms"))
+        GUI.enabled = !isLoadingRooms && !isDepositingTokens && !isCreatingRoom;
+        if (GUILayout.Button("View Other Quarries"))
             OpenBrowser();
 
-        GUI.enabled = !isLoadingRooms && !isDepositingTokens && currentRunTokens > 0;
-        if (GUILayout.Button("Deposit My Tokens"))
+        GUI.enabled = !isLoadingRooms && !isDepositingTokens && !isCreatingRoom && currentRunTokens > 0;
+        if (GUILayout.Button("Deposit My Artifacts"))
             DepositSelectedRoomTokens();
 
-        GUI.enabled = !isLoadingRooms && !isDepositingTokens;
-        if (GUILayout.Button("Back To CollectScene"))
+        GUI.enabled = !isLoadingRooms && !isDepositingTokens && !isCreatingRoom;
+        if (GUILayout.Button("Back To Collecting"))
             BackToCollectScene();
 
         GUI.enabled = true;
         GUILayout.EndArea();
-    }
-
-    private static T FindComponentInScene<T>(Scene scene) where T : Component
-    {
-        if (!scene.IsValid() || !scene.isLoaded)
-            return null;
-
-        var roots = scene.GetRootGameObjects();
-        for (var i = 0; i < roots.Length; i++)
-        {
-            var result = roots[i].GetComponentInChildren<T>(true);
-            if (result != null)
-                return result;
-        }
-
-        return null;
     }
 
     private static Transform FindTransformInScene(Scene scene, string objectName)
@@ -623,5 +726,38 @@ public class RootRoomFlowController : MonoBehaviour
         }
 
         return null;
+    }
+
+    private void UpsertBrowserRoom(RoomDto room)
+    {
+        if (room == null)
+            return;
+
+        for (var i = 0; i < browserRooms.Count; i++)
+        {
+            if (browserRooms[i] == null || browserRooms[i].id != room.id)
+                continue;
+
+            browserRooms[i] = room;
+            return;
+        }
+
+        browserRooms.Insert(0, room);
+    }
+
+    private string ResolvePendingRoomName()
+    {
+        return string.IsNullOrWhiteSpace(pendingRoomName)
+            ? playerName
+            : pendingRoomName.Trim();
+    }
+
+    private void SyncPendingRoomName(string suggestedRoomName)
+    {
+        var sanitizedSuggestion = string.IsNullOrWhiteSpace(suggestedRoomName) ? "Player" : suggestedRoomName.Trim();
+        if (string.IsNullOrWhiteSpace(pendingRoomName) || pendingRoomName == lastSuggestedRoomName)
+            pendingRoomName = sanitizedSuggestion;
+
+        lastSuggestedRoomName = sanitizedSuggestion;
     }
 }
