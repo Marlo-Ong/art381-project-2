@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    private enum PrototypeState
+    private enum GameState
     {
         StartMenu,
         Playing,
@@ -20,10 +20,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject[] gameplayObjectsToToggle;
     [SerializeField] private TokenPickup[] tokenPickupsToReset;
 
-    private PrototypeState currentState;
+    private GameState currentState;
     private bool isSubmissionInFlight;
 
-    public bool IsSessionRunning => currentState == PrototypeState.Playing;
+    public bool IsSessionRunning => currentState == GameState.Playing;
 
     private void Awake()
     {
@@ -83,28 +83,28 @@ public class GameManager : MonoBehaviour
         playerSession.ResetRunTokens();
         ResetSessionPickups();
         ClearAllStatuses();
-        SetState(PrototypeState.Playing);
+        SetState(GameState.Playing);
     }
 
     public void EndRun()
     {
-        if (currentState != PrototypeState.Playing)
+        if (currentState != GameState.Playing)
         {
-            LogFailedRequest(nameof(EndRun), $"The current state is {currentState}, not {PrototypeState.Playing}.");
+            LogFailedRequest(nameof(EndRun), $"The current state is {currentState}, not {GameState.Playing}.");
             return;
         }
 
         playerSession.SetInputActive(false);
-        SetState(PrototypeState.SessionEnd);
+        SetState(GameState.SessionEnd);
         if (sessionEndUI != null)
             sessionEndUI.PrepareForCurrentSession();
     }
 
     public void RequestCreateRoom(string requestedRoomName)
     {
-        if (currentState != PrototypeState.SessionEnd)
+        if (currentState != GameState.SessionEnd)
         {
-            LogFailedRequest(nameof(RequestCreateRoom), $"The current state is {currentState}, not {PrototypeState.SessionEnd}.");
+            LogFailedRequest(nameof(RequestCreateRoom), $"The current state is {currentState}, not {GameState.SessionEnd}.");
             return;
         }
 
@@ -143,9 +143,9 @@ public class GameManager : MonoBehaviour
 
     public void OpenRoomBrowser()
     {
-        if (currentState != PrototypeState.SessionEnd)
+        if (currentState != GameState.SessionEnd)
         {
-            LogFailedRequest(nameof(OpenRoomBrowser), $"The current state is {currentState}, not {PrototypeState.SessionEnd}.");
+            LogFailedRequest(nameof(OpenRoomBrowser), $"The current state is {currentState}, not {GameState.SessionEnd}.");
             return;
         }
 
@@ -179,16 +179,16 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        SetState(PrototypeState.RoomBrowser);
+        SetState(GameState.RoomBrowser);
         if (roomBrowserUI != null)
             roomBrowserUI.Open();
     }
 
     public void CloseRoomBrowser()
     {
-        if (currentState != PrototypeState.RoomBrowser)
+        if (currentState != GameState.RoomBrowser)
         {
-            LogFailedRequest(nameof(CloseRoomBrowser), $"The current state is {currentState}, not {PrototypeState.RoomBrowser}.");
+            LogFailedRequest(nameof(CloseRoomBrowser), $"The current state is {currentState}, not {GameState.RoomBrowser}.");
             return;
         }
 
@@ -198,16 +198,16 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        SetState(PrototypeState.SessionEnd);
+        SetState(GameState.SessionEnd);
         if (sessionEndUI != null)
             sessionEndUI.PrepareForCurrentSession();
     }
 
     public void DepositToSelectedRoom(RoomDto selectedRoom)
     {
-        if (currentState != PrototypeState.RoomBrowser)
+        if (currentState != GameState.RoomBrowser)
         {
-            LogFailedRequest(nameof(DepositToSelectedRoom), $"The current state is {currentState}, not {PrototypeState.RoomBrowser}.");
+            LogFailedRequest(nameof(DepositToSelectedRoom), $"The current state is {currentState}, not {GameState.RoomBrowser}.");
             return;
         }
 
@@ -329,7 +329,7 @@ public class GameManager : MonoBehaviour
     private void ShowStartMenu(string statusMessage)
     {
         ClearAllStatuses();
-        SetState(PrototypeState.StartMenu);
+        SetState(GameState.StartMenu);
         if (startMenuUI != null)
         {
             startMenuUI.SetBusy(false);
@@ -339,23 +339,23 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void SetState(PrototypeState nextState)
+    private void SetState(GameState nextState)
     {
         currentState = nextState;
 
         if (startMenuUI != null)
-            startMenuUI.SetVisible(currentState == PrototypeState.StartMenu);
+            startMenuUI.SetVisible(currentState == GameState.StartMenu);
 
         if (hudUI != null)
-            hudUI.SetVisible(currentState == PrototypeState.Playing);
+            hudUI.SetVisible(currentState == GameState.Playing);
 
         if (sessionEndUI != null)
-            sessionEndUI.SetVisible(currentState == PrototypeState.SessionEnd);
+            sessionEndUI.SetVisible(currentState == GameState.SessionEnd);
 
         if (roomBrowserUI != null)
-            roomBrowserUI.SetVisible(currentState == PrototypeState.RoomBrowser);
+            roomBrowserUI.SetVisible(currentState == GameState.RoomBrowser);
 
-        var gameplayShouldBeActive = currentState == PrototypeState.Playing;
+        var gameplayShouldBeActive = currentState == GameState.Playing;
         for (var i = 0; i < gameplayObjectsToToggle.Length; i++)
             if (gameplayObjectsToToggle[i] != null)
                 gameplayObjectsToToggle[i].SetActive(gameplayShouldBeActive);

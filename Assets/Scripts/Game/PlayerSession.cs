@@ -6,7 +6,6 @@ public class PlayerSession : MonoBehaviour
 {
     [SerializeField] private string playerName = "Player";
     [SerializeField, Min(0)] private int currentRunTokens;
-    [SerializeField] private StarterAssetsInputs inputs;
 
     public event Action<string> PlayerNameChanged;
     public event Action<int> TokenCountChanged;
@@ -17,8 +16,14 @@ public class PlayerSession : MonoBehaviour
 
     public void SetInputActive(bool enabled)
     {
-        this.inputs.cursorLocked = enabled;
-        this.inputs.cursorInputForLook = enabled;
+        var inputs = FindFirstObjectByType<StarterAssetsInputs>();
+        if (inputs != null)
+        {
+            inputs.cursorLocked = enabled;
+            inputs.cursorInputForLook = enabled;
+        }
+        else
+            Debug.LogWarning("Could not find player armature in scene.");
     }
 
     public void SetPlayerName(string newPlayerName)

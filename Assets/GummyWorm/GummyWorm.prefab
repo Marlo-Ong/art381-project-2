@@ -56,6 +56,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: GummyWorm
       objectReference: {fileID: 0}
+    - target: {fileID: 7267583086349385398, guid: a2316efe0f57bcb499d55376b4b9f3c3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.0499
+      objectReference: {fileID: 0}
+    - target: {fileID: 7267583086349385398, guid: a2316efe0f57bcb499d55376b4b9f3c3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.2086
+      objectReference: {fileID: 0}
+    - target: {fileID: 7267583086349385398, guid: a2316efe0f57bcb499d55376b4b9f3c3, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
