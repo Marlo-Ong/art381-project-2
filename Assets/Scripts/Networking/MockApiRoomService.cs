@@ -134,7 +134,6 @@ public class MockApiRoomService : MonoBehaviour
 
         var updateRequest = new UpdateRoomRequest
         {
-            ownerName = selectedRoom.ownerName,
             roomName = selectedRoom.roomName,
             totalTokens = Mathf.Max(0, selectedRoom.totalTokens) + tokensToDeposit,
             createdAt = ApiDateUtils.GetExistingIsoOrNow(selectedRoom.createdAt),

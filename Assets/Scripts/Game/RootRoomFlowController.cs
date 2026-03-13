@@ -544,7 +544,6 @@ public class RootRoomFlowController : MonoBehaviour
     {
         GUILayout.BeginArea(new Rect(Screen.width - 300f, 16f, 284f, 220f), GUI.skin.window);
         GUILayout.Label(RoomUiFormatter.GetRoomName(selectedRoom));
-        GUILayout.Label("Owner: " + RoomUiFormatter.GetOwnerName(selectedRoom));
         GUILayout.Label("Room Tokens: " + Mathf.Max(0, selectedRoom.totalTokens));
         GUILayout.Label("Your Tokens: " + currentRunTokens);
 

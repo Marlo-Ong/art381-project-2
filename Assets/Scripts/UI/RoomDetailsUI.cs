@@ -5,7 +5,6 @@ public class RoomDetailsUI : MonoBehaviour
 {
     [SerializeField] private GameObject root;
     [SerializeField] private TMP_Text roomNameTmpText;
-    [SerializeField] private TMP_Text ownerNameTmpText;
     [SerializeField] private TMP_Text totalTokensTmpText;
     [SerializeField] private TMP_Text createdAtTmpText;
     [SerializeField] private TMP_Text updatedAtTmpText;
@@ -27,7 +26,6 @@ public class RoomDetailsUI : MonoBehaviour
         }
 
         UiTextAdapter.SetText(roomNameTmpText, RoomUiFormatter.GetRoomName(room));
-        UiTextAdapter.SetText(ownerNameTmpText, RoomUiFormatter.GetOwnerName(room));
         UiTextAdapter.SetText(totalTokensTmpText, room.totalTokens.ToString());
         UiTextAdapter.SetText(createdAtTmpText, ApiDateUtils.FormatIsoForDisplay(room.createdAt));
         UiTextAdapter.SetText(updatedAtTmpText, ApiDateUtils.FormatIsoForDisplay(room.updatedAt));
@@ -40,7 +38,6 @@ public class RoomDetailsUI : MonoBehaviour
     public void Clear()
     {
         UiTextAdapter.SetText(roomNameTmpText, "No room selected");
-        UiTextAdapter.SetText(ownerNameTmpText, "Owner: -");
         UiTextAdapter.SetText(totalTokensTmpText, "0");
         UiTextAdapter.SetText(createdAtTmpText, "N/A");
         UiTextAdapter.SetText(updatedAtTmpText, "N/A");
@@ -59,13 +56,5 @@ internal static class RoomUiFormatter
             return "Unnamed Room";
 
         return room.roomName.Trim();
-    }
-
-    public static string GetOwnerName(RoomDto room)
-    {
-        if (room == null || string.IsNullOrWhiteSpace(room.ownerName))
-            return "Anonymous";
-
-        return room.ownerName.Trim();
     }
 }

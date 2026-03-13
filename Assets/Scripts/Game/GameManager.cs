@@ -265,7 +265,6 @@ public class GameManager : MonoBehaviour
         var timestamp = ApiDateUtils.GetCurrentUtcIsoString();
         var createRequest = new CreateRoomRequest
         {
-            ownerName = playerSession.PlayerName,
             roomName = ResolveRoomName(requestedRoomName),
             totalTokens = playerSession.CurrentRunTokens,
             createdAt = timestamp,

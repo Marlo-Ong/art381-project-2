@@ -8,7 +8,6 @@ public class RoomListItemUI : MonoBehaviour
     [SerializeField] private Button selectButton;
     [SerializeField] private GameObject selectedState;
     [SerializeField] private TMP_Text roomNameTmpText;
-    [SerializeField] private TMP_Text ownerNameTmpText;
     [SerializeField] private TMP_Text totalTokensTmpText;
     [SerializeField] private TMP_Text updatedAtTmpText;
 
@@ -33,7 +32,6 @@ public class RoomListItemUI : MonoBehaviour
         onSelected = onSelectedCallback;
 
         UiTextAdapter.SetText(roomNameTmpText, RoomUiFormatter.GetRoomName(roomData));
-        UiTextAdapter.SetText(ownerNameTmpText, RoomUiFormatter.GetOwnerName(roomData));
         UiTextAdapter.SetText(totalTokensTmpText, roomData != null ? roomData.totalTokens.ToString() : "0");
         UiTextAdapter.SetText(updatedAtTmpText, roomData != null ? ApiDateUtils.FormatIsoForDisplay(roomData.updatedAt) : "N/A");
         SetSelected(false);

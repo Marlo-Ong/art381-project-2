@@ -8,7 +8,6 @@ public class RoomDisplayController : MonoBehaviour
     [SerializeField, Min(0.1f)] private float maxScaleMultiplier = 4f;
     [SerializeField, Min(0.01f)] private float scalePerLogStep = 0.75f;
     [SerializeField] private TMP_Text roomNameTmpText;
-    [SerializeField] private TMP_Text ownerNameTmpText;
     [SerializeField] private TMP_Text totalTokensTmpText;
 
     private Vector3 initialScale = Vector3.one;
@@ -29,7 +28,6 @@ public class RoomDisplayController : MonoBehaviour
 
         SetTokenTotal(room.totalTokens);
         UiTextAdapter.SetText(roomNameTmpText, RoomUiFormatter.GetRoomName(room));
-        UiTextAdapter.SetText(ownerNameTmpText, RoomUiFormatter.GetOwnerName(room));
         UiTextAdapter.SetText(totalTokensTmpText, room.totalTokens.ToString());
     }
 
@@ -46,7 +44,6 @@ public class RoomDisplayController : MonoBehaviour
     {
         SetTokenTotal(0);
         UiTextAdapter.SetText(roomNameTmpText, "Room Preview");
-        UiTextAdapter.SetText(ownerNameTmpText, "Owner");
     }
 
     private void CacheInitialScale()
