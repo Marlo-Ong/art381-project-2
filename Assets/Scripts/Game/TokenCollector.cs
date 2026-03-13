@@ -14,6 +14,12 @@ public class TokenCollector : MonoBehaviour
             gameManager = FindFirstObjectByType<GameManager>();
     }
 
+    void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if (hit.gameObject.TryGetComponent<TokenPickup>(out var collectible))
+            this.TryCollect(collectible);
+    }
+
     public bool TryCollect(TokenPickup pickup)
     {
         if (pickup == null || playerSession == null)

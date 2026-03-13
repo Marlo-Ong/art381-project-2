@@ -54,10 +54,87 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 2985a18e588dbb7438de8d757ce58a66, type: 2}
     - target: {fileID: 919132149155446097, guid: a2316efe0f57bcb499d55376b4b9f3c3, type: 3}
       propertyPath: m_Name
-      value: Scaniverse_2026_03_01_221729 (4)
+      value: GummyWorm
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: -231537852577957333, guid: a2316efe0f57bcb499d55376b4b9f3c3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4768479871281661578}
+    - targetCorrespondingSourceObject: {fileID: -231537852577957333, guid: a2316efe0f57bcb499d55376b4b9f3c3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 623438886714410115}
+    - targetCorrespondingSourceObject: {fileID: -231537852577957333, guid: a2316efe0f57bcb499d55376b4b9f3c3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7368218428931170270}
   m_SourcePrefab: {fileID: 100100000, guid: a2316efe0f57bcb499d55376b4b9f3c3, type: 3}
+--- !u!1 &8398006631439350348 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -231537852577957333, guid: a2316efe0f57bcb499d55376b4b9f3c3, type: 3}
+  m_PrefabInstance: {fileID: 595283316175372391}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &4768479871281661578
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8398006631439350348}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -8670151273213183110, guid: a2316efe0f57bcb499d55376b4b9f3c3, type: 3}
+--- !u!114 &623438886714410115
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8398006631439350348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a5bfe9e65772c545a9856249bccd563, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TokenPickup
+  tokenAmount: 1
+  destroyOnCollect: 0
+--- !u!54 &7368218428931170270
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8398006631439350348}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0

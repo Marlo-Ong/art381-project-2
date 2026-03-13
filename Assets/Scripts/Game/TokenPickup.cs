@@ -9,16 +9,6 @@ public class TokenPickup : MonoBehaviour
 
     public int TokenAmount => Mathf.Max(1, tokenAmount);
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (isCollected)
-            return;
-
-        var collector = other.GetComponentInParent<TokenCollector>();
-        if (collector != null)
-            collector.TryCollect(this);
-    }
-
     public bool Consume()
     {
         if (isCollected)

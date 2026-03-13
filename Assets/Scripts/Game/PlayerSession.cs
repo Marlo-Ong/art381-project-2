@@ -1,10 +1,12 @@
 using System;
+using StarterAssets;
 using UnityEngine;
 
 public class PlayerSession : MonoBehaviour
 {
     [SerializeField] private string playerName = "Player";
     [SerializeField, Min(0)] private int currentRunTokens;
+    [SerializeField] private StarterAssetsInputs inputs;
 
     public event Action<string> PlayerNameChanged;
     public event Action<int> TokenCountChanged;
@@ -12,6 +14,12 @@ public class PlayerSession : MonoBehaviour
     public string PlayerName => string.IsNullOrWhiteSpace(playerName) ? "Player" : playerName;
     public int CurrentRunTokens => Mathf.Max(0, currentRunTokens);
     public bool HasTokens => CurrentRunTokens > 0;
+
+    public void SetInputActive(bool enabled)
+    {
+        this.inputs.cursorLocked = enabled;
+        this.inputs.cursorInputForLook = enabled;
+    }
 
     public void SetPlayerName(string newPlayerName)
     {
