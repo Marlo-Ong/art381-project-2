@@ -64,9 +64,6 @@ public class RootRoomFlowController : MonoBehaviour
     private bool isLoadingRooms;
     private bool isDepositingTokens;
     private bool browserOpen;
-    private bool uiOwnsCursorState;
-    private bool restoreCursorLocked = true;
-    private bool restoreCursorVisible;
     private BrowseMode currentBrowseMode = BrowseMode.Recent;
 
     public bool IsBrowserOpen => browserOpen;
@@ -94,13 +91,11 @@ public class RootRoomFlowController : MonoBehaviour
     private void Start()
     {
         RefreshSceneBindings();
-        UpdateCursorOwnership();
     }
 
     private void Update()
     {
         HandleCollectSceneShortcut();
-        UpdateCursorOwnership();
     }
 
     private void OnDisable()
@@ -108,15 +103,17 @@ public class RootRoomFlowController : MonoBehaviour
         SceneManager.sceneLoaded -= HandleSceneLoaded;
         SceneManager.sceneUnloaded -= HandleSceneUnloaded;
         DetachPlayerSession();
-
-        if (uiOwnsCursorState)
-            ApplyCursorState(restoreCursorLocked, restoreCursorVisible);
     }
 
     private void OnDestroy()
     {
         if (instance == this)
             instance = null;
+    }
+
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        Cursor.lockState = browserOpen ? CursorLockMode.None : CursorLockMode.Locked;
     }
 
     private void HandleSceneLoaded(Scene scene, LoadSceneMode _)
@@ -128,8 +125,6 @@ public class RootRoomFlowController : MonoBehaviour
 
         if (scene.name == viewSceneName)
             ApplySelectedRoomToViewScene();
-
-        UpdateCursorOwnership();
     }
 
     private void HandleSceneUnloaded(Scene scene)
@@ -154,13 +149,13 @@ public class RootRoomFlowController : MonoBehaviour
         if (autoRefreshBrowserOnOpen || browserRooms.Count == 0)
             LoadRooms(currentBrowseMode);
 
-        UpdateCursorOwnership();
+        Cursor.lockState = browserOpen ? CursorLockMode.None : CursorLockMode.Locked;
     }
 
     private void CloseBrowser()
     {
         browserOpen = false;
-        UpdateCursorOwnership();
+        Cursor.lockState = browserOpen ? CursorLockMode.None : CursorLockMode.Locked;
     }
 
     private void LoadRooms(BrowseMode mode)
@@ -357,7 +352,7 @@ public class RootRoomFlowController : MonoBehaviour
     private void BackToCollectScene()
     {
         browserOpen = false;
-        UpdateCursorOwnership();
+        Cursor.lockState = browserOpen ? CursorLockMode.None : CursorLockMode.Locked;
 
         if (sceneLoader != null)
             sceneLoader.LoadCollectScene();
@@ -431,6 +426,7 @@ public class RootRoomFlowController : MonoBehaviour
             return;
 
         viewGummyWorm.localScale = viewGummyInitialScale * selectedRoom.totalTokens;
+        OpenBrowser();
     }
 
     private bool EnsureViewGummyWorm()
@@ -478,39 +474,10 @@ public class RootRoomFlowController : MonoBehaviour
             soundEffectPlayer.PlaySoundEffect(RootSoundEffectPlayer.TokensDepositedSoundEffectIndex);
     }
 
-    private void UpdateCursorOwnership()
-    {
-        var shouldUnlock = browserOpen || ShouldShowViewOverlay();
-        if (shouldUnlock)
-        {
-            if (!uiOwnsCursorState)
-            {
-                restoreCursorLocked = Cursor.lockState == CursorLockMode.Locked;
-                restoreCursorVisible = Cursor.visible;
-                uiOwnsCursorState = true;
-            }
-
-            ApplyCursorState(false, true);
-            return;
-        }
-
-        if (!uiOwnsCursorState)
-            return;
-
-        ApplyCursorState(restoreCursorLocked, restoreCursorVisible);
-        uiOwnsCursorState = false;
-    }
-
-    private static void ApplyCursorState(bool cursorLocked, bool cursorVisible)
-    {
-        Cursor.lockState = cursorLocked ? CursorLockMode.Locked : CursorLockMode.None;
-        Cursor.visible = cursorVisible;
-    }
-
     private void HandleCollectSceneShortcut()
     {
 #if ENABLE_INPUT_SYSTEM
-        if (!CanOpenBrowserFromCollectScene())
+        if (!CanOpenBrowser())
             return;
 
         var keyboard = Keyboard.current;
@@ -519,13 +486,12 @@ public class RootRoomFlowController : MonoBehaviour
 #endif
     }
 
-    private bool CanOpenBrowserFromCollectScene()
+    private bool CanOpenBrowser()
     {
         return !browserOpen &&
                !isLoadingRooms &&
                !isDepositingTokens &&
-               !isCreatingRoom &&
-               GetActiveSceneName() == collectSceneName;
+               !isCreatingRoom;
     }
 
     private bool ShouldShowCollectScenePrompt()
@@ -552,19 +518,17 @@ public class RootRoomFlowController : MonoBehaviour
 
     private void OnGUI()
     {
-        DrawCollectSceneArtifactCount();
-
-        if (ShouldShowCollectScenePrompt())
-            DrawCollectScenePrompt();
+        DrawArtifactCount();
+        DrawBrowseQuarriesPrompt();
 
         if (browserOpen)
             DrawBrowserOverlay();
 
-        if (ShouldShowViewOverlay())
+        if (ShouldShowViewOverlay() && browserOpen)
             DrawViewOverlay();
     }
 
-    private void DrawCollectScenePrompt()
+    private void DrawBrowseQuarriesPrompt()
     {
 #if ENABLE_INPUT_SYSTEM
         var label = $"Press {openBrowserKey} to browse quarries";
@@ -576,7 +540,7 @@ public class RootRoomFlowController : MonoBehaviour
         GUI.Box(rect, label);
     }
 
-    private void DrawCollectSceneArtifactCount()
+    private void DrawArtifactCount()
     {
         var label = "Collected artifacts: " + Mathf.Max(0, currentRunTokens);
         var size = GUI.skin.box.CalcSize(new GUIContent(label));
@@ -665,13 +629,6 @@ public class RootRoomFlowController : MonoBehaviour
         GUILayout.BeginArea(new Rect(Screen.width - 300f, 16f, 284f, 220f), GUI.skin.window);
         GUILayout.Label(RoomUiFormatter.GetRoomName(selectedRoom));
         GUILayout.Label("Artifacts deposited in this quarry: " + Mathf.Max(0, selectedRoom.totalTokens));
-
-        if (!string.IsNullOrWhiteSpace(statusMessage))
-            GUILayout.Label(statusMessage);
-
-        GUI.enabled = !isLoadingRooms && !isDepositingTokens && !isCreatingRoom;
-        if (GUILayout.Button("View Other Quarries"))
-            OpenBrowser();
 
         GUI.enabled = !isLoadingRooms && !isDepositingTokens && !isCreatingRoom && currentRunTokens > 0;
         if (GUILayout.Button("Deposit My Artifacts"))

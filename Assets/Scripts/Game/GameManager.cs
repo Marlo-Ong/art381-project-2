@@ -64,7 +64,6 @@ public class GameManager : MonoBehaviour
         if (roomBrowserUI != null)
             roomBrowserUI.Initialize(this, roomService, playerSession);
 
-        playerSession.SetInputActive(false);
         ShowStartMenu(string.Empty);
     }
 
@@ -82,7 +81,6 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        playerSession.SetInputActive(true);
         playerSession.SetPlayerName(requestedPlayerName);
         playerSession.ResetRunTokens();
         ResetSessionPickups();
@@ -98,7 +96,6 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        playerSession.SetInputActive(false);
         SetState(GameState.SessionEnd);
         if (sessionEndUI != null)
             sessionEndUI.PrepareForCurrentSession();

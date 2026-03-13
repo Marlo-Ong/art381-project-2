@@ -13,12 +13,6 @@ public class PlayerSession : MonoBehaviour
     public int CurrentRunTokens => Mathf.Max(0, currentRunTokens);
     public bool HasTokens => CurrentRunTokens > 0;
 
-    public void SetInputActive(bool enabled)
-    {
-        Cursor.lockState = enabled ? CursorLockMode.Locked : CursorLockMode.None;
-        Cursor.visible = !enabled;
-    }
-
     public void SetPlayerName(string newPlayerName)
     {
         var sanitizedName = string.IsNullOrWhiteSpace(newPlayerName) ? "Player" : newPlayerName.Trim();

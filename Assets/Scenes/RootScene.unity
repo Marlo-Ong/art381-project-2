@@ -186,7 +186,7 @@ MonoBehaviour:
   recentPageSize: 20
   leaderboardPageSize: 20
   requestTimeoutSeconds: 15
-  usePatchForUpdates: 1
+  usePatchForUpdates: 0
   openBrowserKey: 60
   minScaleMultiplier: 0.75
   maxScaleMultiplier: 4
