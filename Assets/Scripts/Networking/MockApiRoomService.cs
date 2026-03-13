@@ -11,6 +11,9 @@ public class MockApiRoomService : MonoBehaviour
     [SerializeField] private ApiClient apiClient;
     [SerializeField] private bool usePatchForUpdates = true;
 
+    public ApiConfig Config => apiConfig;
+    public ApiClient Client => apiClient;
+
     public IEnumerator CreateRoom(CreateRoomRequest request, Action<RoomDto> onSuccess, Action<string> onError)
     {
         string setupError;
@@ -139,6 +142,13 @@ public class MockApiRoomService : MonoBehaviour
         };
 
         yield return UpdateRoom(roomId, updateRequest, onSuccess, onError);
+    }
+
+    public void Configure(ApiConfig config, ApiClient client, bool patchForUpdates)
+    {
+        apiConfig = config;
+        apiClient = client;
+        usePatchForUpdates = patchForUpdates;
     }
 
     private IEnumerator GetRooms(string sortBy, string order, int page, int limit, Action<List<RoomDto>> onSuccess, Action<string> onError)

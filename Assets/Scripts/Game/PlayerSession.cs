@@ -1,5 +1,4 @@
 using System;
-using StarterAssets;
 using UnityEngine;
 
 public class PlayerSession : MonoBehaviour
@@ -16,14 +15,8 @@ public class PlayerSession : MonoBehaviour
 
     public void SetInputActive(bool enabled)
     {
-        var inputs = FindFirstObjectByType<StarterAssetsInputs>();
-        if (inputs != null)
-        {
-            inputs.cursorLocked = enabled;
-            inputs.cursorInputForLook = enabled;
-        }
-        else
-            Debug.LogWarning("Could not find player armature in scene.");
+        Cursor.lockState = enabled ? CursorLockMode.Locked : CursorLockMode.None;
+        Cursor.visible = !enabled;
     }
 
     public void SetPlayerName(string newPlayerName)

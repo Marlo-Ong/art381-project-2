@@ -32,6 +32,9 @@ public class RootSceneLoader : MonoBehaviour
 
         instance = this;
 
+        if (GetComponent<RootRoomFlowController>() == null)
+            gameObject.AddComponent<RootRoomFlowController>();
+
         if (loadMode == LoadSceneMode.Single)
             DontDestroyOnLoad(gameObject);
 

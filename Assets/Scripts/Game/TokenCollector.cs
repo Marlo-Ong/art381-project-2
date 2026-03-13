@@ -25,9 +25,6 @@ public class TokenCollector : MonoBehaviour
         if (pickup == null || playerSession == null)
             return false;
 
-        if (gameManager != null && !gameManager.IsSessionRunning)
-            return false;
-
         if (!pickup.Consume())
             return false;
 

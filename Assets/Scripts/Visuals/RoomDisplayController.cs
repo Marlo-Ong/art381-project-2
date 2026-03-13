@@ -37,8 +37,7 @@ public class RoomDisplayController : MonoBehaviour
     {
         CacheInitialScale();
         var target = tokenModel != null ? tokenModel : transform;
-        var logValue = totalTokens <= 0 ? 0f : Mathf.Log10(totalTokens + 1f);
-        var multiplier = Mathf.Clamp(minScaleMultiplier + (logValue * scalePerLogStep), minScaleMultiplier, maxScaleMultiplier);
+        var multiplier = CalculateScaleMultiplier(totalTokens, minScaleMultiplier, maxScaleMultiplier, scalePerLogStep);
         target.localScale = initialScale * multiplier;
         UiTextAdapter.SetText(totalTokensTmpText, Mathf.Max(0, totalTokens).ToString());
     }
@@ -58,5 +57,11 @@ public class RoomDisplayController : MonoBehaviour
         var target = tokenModel != null ? tokenModel : transform;
         initialScale = target.localScale;
         cachedScale = true;
+    }
+
+    public static float CalculateScaleMultiplier(int totalTokens, float minMultiplier, float maxMultiplier, float multiplierPerLogStep)
+    {
+        var logValue = totalTokens <= 0 ? 0f : Mathf.Log10(totalTokens + 1f);
+        return Mathf.Clamp(minMultiplier + (logValue * multiplierPerLogStep), minMultiplier, maxMultiplier);
     }
 }

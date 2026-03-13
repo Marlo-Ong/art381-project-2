@@ -23,6 +23,8 @@ public class ApiClient : MonoBehaviour
 
     [SerializeField, Min(1)] private int requestTimeoutSeconds = 15;
 
+    public int RequestTimeoutSeconds => Mathf.Max(1, requestTimeoutSeconds);
+
     public IEnumerator Get(string url, Action<ApiResponse> onComplete)
     {
         yield return SendRequest(UnityWebRequest.kHttpVerbGET, url, null, onComplete);
@@ -62,6 +64,11 @@ public class ApiClient : MonoBehaviour
             return Array.Empty<T>();
 
         return wrapper.items;
+    }
+
+    public void Configure(int timeoutSeconds)
+    {
+        requestTimeoutSeconds = Mathf.Max(1, timeoutSeconds);
     }
 
     private IEnumerator SendRequest(string method, string url, object requestBody, Action<ApiResponse> onComplete)

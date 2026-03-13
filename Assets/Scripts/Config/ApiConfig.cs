@@ -20,4 +20,13 @@ public class ApiConfig : MonoBehaviour
 
         return BaseUrl + "/" + resourcePath.Trim().TrimStart('/');
     }
+
+    public void Configure(string configuredBaseUrl, int configuredRecentPageSize, int configuredLeaderboardPageSize)
+    {
+        baseUrl = string.IsNullOrWhiteSpace(configuredBaseUrl)
+            ? string.Empty
+            : configuredBaseUrl.Trim();
+        recentPageSize = Mathf.Max(1, configuredRecentPageSize);
+        leaderboardPageSize = Mathf.Max(1, configuredLeaderboardPageSize);
+    }
 }
