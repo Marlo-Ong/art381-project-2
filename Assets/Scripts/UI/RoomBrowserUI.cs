@@ -23,7 +23,6 @@ public class RoomBrowserUI : MonoBehaviour
     [SerializeField] private Button backButton;
     [SerializeField] private GameObject loadingIndicator;
     [SerializeField] private TMP_Text statusTmpText;
-    [SerializeField] private Text statusText;
 
     private readonly List<RoomListItemUI> spawnedItems = new List<RoomListItemUI>();
     private GameManager gameManager;
@@ -31,6 +30,21 @@ public class RoomBrowserUI : MonoBehaviour
     private RoomDto selectedRoom;
     private bool isLoading;
     private bool isSubmitting;
+
+    private void Awake()
+    {
+        if (recentButton != null)
+            recentButton.onClick.AddListener(LoadRecentRooms);
+
+        if (leaderboardButton != null)
+            leaderboardButton.onClick.AddListener(LoadLeaderboardRooms);
+
+        if (depositButton != null)
+            depositButton.onClick.AddListener(OnDepositPressed);
+
+        if (backButton != null)
+            backButton.onClick.AddListener(OnBackPressed);
+    }
 
     public void Initialize(GameManager manager, MockApiRoomService service, PlayerSession session)
     {
@@ -43,11 +57,24 @@ public class RoomBrowserUI : MonoBehaviour
 
         ClearSelection();
         ClearStatus();
+        UpdateLoadingIndicator();
         RefreshButtons();
     }
 
     private void OnDestroy()
     {
+        if (recentButton != null)
+            recentButton.onClick.RemoveListener(LoadRecentRooms);
+
+        if (leaderboardButton != null)
+            leaderboardButton.onClick.RemoveListener(LoadLeaderboardRooms);
+
+        if (depositButton != null)
+            depositButton.onClick.RemoveListener(OnDepositPressed);
+
+        if (backButton != null)
+            backButton.onClick.RemoveListener(OnBackPressed);
+
         if (playerSession != null)
             playerSession.TokenCountChanged -= HandleTokenCountChanged;
     }
@@ -68,7 +95,10 @@ public class RoomBrowserUI : MonoBehaviour
     public void LoadRecentRooms()
     {
         if (isLoading || isSubmitting)
+        {
+            LogFailedRequest(nameof(LoadRecentRooms), "The room browser is busy.");
             return;
+        }
 
         StartCoroutine(LoadRoomsRoutine(BrowseMode.Recent));
     }
@@ -76,7 +106,10 @@ public class RoomBrowserUI : MonoBehaviour
     public void LoadLeaderboardRooms()
     {
         if (isLoading || isSubmitting)
+        {
+            LogFailedRequest(nameof(LoadLeaderboardRooms), "The room browser is busy.");
             return;
+        }
 
         StartCoroutine(LoadRoomsRoutine(BrowseMode.Leaderboard));
     }
@@ -84,10 +117,14 @@ public class RoomBrowserUI : MonoBehaviour
     public void OnDepositPressed()
     {
         if (gameManager == null)
+        {
+            LogFailedRequest(nameof(OnDepositPressed), "GameManager reference is missing.");
             return;
+        }
 
         if (selectedRoom == null)
         {
+            LogFailedRequest(nameof(OnDepositPressed), "No room is currently selected.");
             SetStatus("Select a room before depositing.", true);
             return;
         }
@@ -97,8 +134,13 @@ public class RoomBrowserUI : MonoBehaviour
 
     public void OnBackPressed()
     {
-        if (gameManager != null)
-            gameManager.CloseRoomBrowser();
+        if (gameManager == null)
+        {
+            LogFailedRequest(nameof(OnBackPressed), "GameManager reference is missing.");
+            return;
+        }
+
+        gameManager.CloseRoomBrowser();
     }
 
     public void SetSubmitting(bool submitting, string statusMessage)
@@ -116,7 +158,7 @@ public class RoomBrowserUI : MonoBehaviour
         var finalMessage = string.IsNullOrWhiteSpace(message)
             ? string.Empty
             : (isError ? "Error: " + message : message);
-        UiTextAdapter.SetText(statusText, statusTmpText, finalMessage);
+        UiTextAdapter.SetText(statusTmpText, finalMessage);
     }
 
     public void ClearStatus()
@@ -141,12 +183,14 @@ public class RoomBrowserUI : MonoBehaviour
     {
         if (roomService == null)
         {
+            LogFailedRequest(ResolveLoadRequestName(mode), "Room service reference is missing.");
             SetStatus("Room service reference is missing.", true);
             yield break;
         }
 
         if (listContainer == null || listItemPrefab == null)
         {
+            LogFailedRequest(ResolveLoadRequestName(mode), "The list container or list item prefab is not assigned.");
             SetStatus("Assign a list container and list item prefab.", true);
             yield break;
         }
@@ -174,6 +218,7 @@ public class RoomBrowserUI : MonoBehaviour
 
         if (!string.IsNullOrWhiteSpace(requestError))
         {
+            LogFailedRequest(ResolveLoadRequestName(mode), requestError);
             SetStatus(requestError, true);
             yield break;
         }
@@ -244,5 +289,15 @@ public class RoomBrowserUI : MonoBehaviour
     private void HandleTokenCountChanged(int _)
     {
         RefreshButtons();
+    }
+
+    private string ResolveLoadRequestName(BrowseMode mode)
+    {
+        return mode == BrowseMode.Recent ? nameof(LoadRecentRooms) : nameof(LoadLeaderboardRooms);
+    }
+
+    private void LogFailedRequest(string requestName, string reason)
+    {
+        UiRequestLogger.LogFailedRequest(this, nameof(RoomBrowserUI), requestName, reason);
     }
 }

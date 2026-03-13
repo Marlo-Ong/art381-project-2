@@ -1,6 +1,5 @@
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class RoomDisplayController : MonoBehaviour
 {
@@ -9,11 +8,8 @@ public class RoomDisplayController : MonoBehaviour
     [SerializeField, Min(0.1f)] private float maxScaleMultiplier = 4f;
     [SerializeField, Min(0.01f)] private float scalePerLogStep = 0.75f;
     [SerializeField] private TMP_Text roomNameTmpText;
-    [SerializeField] private Text roomNameText;
     [SerializeField] private TMP_Text ownerNameTmpText;
-    [SerializeField] private Text ownerNameText;
     [SerializeField] private TMP_Text totalTokensTmpText;
-    [SerializeField] private Text totalTokensText;
 
     private Vector3 initialScale = Vector3.one;
     private bool cachedScale;
@@ -32,9 +28,9 @@ public class RoomDisplayController : MonoBehaviour
         }
 
         SetTokenTotal(room.totalTokens);
-        UiTextAdapter.SetText(roomNameText, roomNameTmpText, RoomUiFormatter.GetRoomName(room));
-        UiTextAdapter.SetText(ownerNameText, ownerNameTmpText, RoomUiFormatter.GetOwnerName(room));
-        UiTextAdapter.SetText(totalTokensText, totalTokensTmpText, room.totalTokens.ToString());
+        UiTextAdapter.SetText(roomNameTmpText, RoomUiFormatter.GetRoomName(room));
+        UiTextAdapter.SetText(ownerNameTmpText, RoomUiFormatter.GetOwnerName(room));
+        UiTextAdapter.SetText(totalTokensTmpText, room.totalTokens.ToString());
     }
 
     public void SetTokenTotal(int totalTokens)
@@ -44,14 +40,14 @@ public class RoomDisplayController : MonoBehaviour
         var logValue = totalTokens <= 0 ? 0f : Mathf.Log10(totalTokens + 1f);
         var multiplier = Mathf.Clamp(minScaleMultiplier + (logValue * scalePerLogStep), minScaleMultiplier, maxScaleMultiplier);
         target.localScale = initialScale * multiplier;
-        UiTextAdapter.SetText(totalTokensText, totalTokensTmpText, Mathf.Max(0, totalTokens).ToString());
+        UiTextAdapter.SetText(totalTokensTmpText, Mathf.Max(0, totalTokens).ToString());
     }
 
     public void Clear()
     {
         SetTokenTotal(0);
-        UiTextAdapter.SetText(roomNameText, roomNameTmpText, "Room Preview");
-        UiTextAdapter.SetText(ownerNameText, ownerNameTmpText, "Owner");
+        UiTextAdapter.SetText(roomNameTmpText, "Room Preview");
+        UiTextAdapter.SetText(ownerNameTmpText, "Owner");
     }
 
     private void CacheInitialScale()

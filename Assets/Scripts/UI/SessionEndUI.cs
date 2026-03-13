@@ -6,18 +6,32 @@ public class SessionEndUI : MonoBehaviour
 {
     [SerializeField] private GameObject root;
     [SerializeField] private TMP_Text playerNameTmpText;
-    [SerializeField] private Text playerNameText;
     [SerializeField] private TMP_Text tokenCountTmpText;
-    [SerializeField] private Text tokenCountText;
     [SerializeField] private TMP_InputField roomNameTmpInput;
-    [SerializeField] private InputField roomNameInput;
     [SerializeField] private Button createRoomButton;
     [SerializeField] private Button browseRoomsButton;
     [SerializeField] private TMP_Text statusTmpText;
-    [SerializeField] private Text statusText;
 
     private GameManager gameManager;
     private PlayerSession playerSession;
+
+    private void Awake()
+    {
+        if (createRoomButton != null)
+            createRoomButton.onClick.AddListener(OnCreateRoomPressed);
+
+        if (browseRoomsButton != null)
+            browseRoomsButton.onClick.AddListener(OnBrowseRoomsPressed);
+    }
+
+    private void OnDestroy()
+    {
+        if (createRoomButton != null)
+            createRoomButton.onClick.RemoveListener(OnCreateRoomPressed);
+
+        if (browseRoomsButton != null)
+            browseRoomsButton.onClick.RemoveListener(OnBrowseRoomsPressed);
+    }
 
     public void Initialize(GameManager manager, PlayerSession session)
     {
@@ -40,8 +54,8 @@ public class SessionEndUI : MonoBehaviour
     {
         RefreshSummary();
 
-        if (string.IsNullOrWhiteSpace(UiInputAdapter.GetText(roomNameInput, roomNameTmpInput)) && playerSession != null)
-            UiInputAdapter.SetText(roomNameInput, roomNameTmpInput, playerSession.PlayerName);
+        if (string.IsNullOrWhiteSpace(UiInputAdapter.GetText(roomNameTmpInput)) && playerSession != null)
+            UiInputAdapter.SetText(roomNameTmpInput, playerSession.PlayerName);
 
         SetBusy(false);
         ClearStatus();
@@ -55,7 +69,7 @@ public class SessionEndUI : MonoBehaviour
         if (browseRoomsButton != null)
             browseRoomsButton.interactable = !isBusy;
 
-        UiInputAdapter.SetInteractable(roomNameInput, roomNameTmpInput, !isBusy);
+        UiInputAdapter.SetInteractable(roomNameTmpInput, !isBusy);
     }
 
     public void SetStatus(string message, bool isError)
@@ -63,7 +77,7 @@ public class SessionEndUI : MonoBehaviour
         var finalMessage = string.IsNullOrWhiteSpace(message)
             ? string.Empty
             : (isError ? "Error: " + message : message);
-        UiTextAdapter.SetText(statusText, statusTmpText, finalMessage);
+        UiTextAdapter.SetText(statusTmpText, finalMessage);
     }
 
     public void ClearStatus()
@@ -74,15 +88,23 @@ public class SessionEndUI : MonoBehaviour
     public void OnCreateRoomPressed()
     {
         if (gameManager == null)
+        {
+            LogFailedRequest(nameof(OnCreateRoomPressed), "GameManager reference is missing.");
             return;
+        }
 
-        gameManager.RequestCreateRoom(UiInputAdapter.GetText(roomNameInput, roomNameTmpInput));
+        gameManager.RequestCreateRoom(UiInputAdapter.GetText(roomNameTmpInput));
     }
 
     public void OnBrowseRoomsPressed()
     {
-        if (gameManager != null)
-            gameManager.OpenRoomBrowser();
+        if (gameManager == null)
+        {
+            LogFailedRequest(nameof(OnBrowseRoomsPressed), "GameManager reference is missing.");
+            return;
+        }
+
+        gameManager.OpenRoomBrowser();
     }
 
     private void RefreshSummary()
@@ -90,7 +112,12 @@ public class SessionEndUI : MonoBehaviour
         if (playerSession == null)
             return;
 
-        UiTextAdapter.SetText(playerNameText, playerNameTmpText, playerSession.PlayerName);
-        UiTextAdapter.SetText(tokenCountText, tokenCountTmpText, playerSession.CurrentRunTokens.ToString());
+        UiTextAdapter.SetText(playerNameTmpText, playerSession.PlayerName);
+        UiTextAdapter.SetText(tokenCountTmpText, playerSession.CurrentRunTokens.ToString());
+    }
+
+    private void LogFailedRequest(string requestName, string reason)
+    {
+        UiRequestLogger.LogFailedRequest(this, nameof(SessionEndUI), requestName, reason);
     }
 }

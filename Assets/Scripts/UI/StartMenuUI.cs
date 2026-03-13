@@ -6,13 +6,23 @@ public class StartMenuUI : MonoBehaviour
 {
     [SerializeField] private GameObject root;
     [SerializeField] private TMP_InputField playerNameTmpInput;
-    [SerializeField] private InputField playerNameInput;
     [SerializeField] private Button startButton;
     [SerializeField] private TMP_Text statusTmpText;
-    [SerializeField] private Text statusText;
 
     private GameManager gameManager;
     private PlayerSession playerSession;
+
+    private void Awake()
+    {
+        if (startButton != null)
+            startButton.onClick.AddListener(OnStartPressed);
+    }
+
+    private void OnDestroy()
+    {
+        if (startButton != null)
+            startButton.onClick.RemoveListener(OnStartPressed);
+    }
 
     public void Initialize(GameManager manager, PlayerSession session)
     {
@@ -36,7 +46,7 @@ public class StartMenuUI : MonoBehaviour
         if (startButton != null)
             startButton.interactable = !isBusy;
 
-        UiInputAdapter.SetInteractable(playerNameInput, playerNameTmpInput, !isBusy);
+        UiInputAdapter.SetInteractable(playerNameTmpInput, !isBusy);
     }
 
     public void RefreshFromSession()
@@ -44,7 +54,7 @@ public class StartMenuUI : MonoBehaviour
         if (playerSession == null)
             return;
 
-        UiInputAdapter.SetText(playerNameInput, playerNameTmpInput, playerSession.PlayerName);
+        UiInputAdapter.SetText(playerNameTmpInput, playerSession.PlayerName);
     }
 
     public void SetStatus(string message, bool isError)
@@ -52,7 +62,7 @@ public class StartMenuUI : MonoBehaviour
         var finalMessage = string.IsNullOrWhiteSpace(message)
             ? string.Empty
             : (isError ? "Error: " + message : message);
-        UiTextAdapter.SetText(statusText, statusTmpText, finalMessage);
+        UiTextAdapter.SetText(statusTmpText, finalMessage);
     }
 
     public void ClearStatus()
@@ -63,19 +73,24 @@ public class StartMenuUI : MonoBehaviour
     public void OnStartPressed()
     {
         if (gameManager == null)
+        {
+            LogFailedRequest(nameof(OnStartPressed), "GameManager reference is missing.");
             return;
+        }
 
-        gameManager.BeginRun(UiInputAdapter.GetText(playerNameInput, playerNameTmpInput));
+        gameManager.BeginRun(UiInputAdapter.GetText(playerNameTmpInput));
+    }
+
+    private void LogFailedRequest(string requestName, string reason)
+    {
+        UiRequestLogger.LogFailedRequest(this, nameof(StartMenuUI), requestName, reason);
     }
 }
 
 internal static class UiTextAdapter
 {
-    public static void SetText(Text legacyText, TMP_Text tmpText, string value)
+    public static void SetText(TMP_Text tmpText, string value)
     {
-        if (legacyText != null)
-            legacyText.text = value;
-
         if (tmpText != null)
             tmpText.text = value;
     }
@@ -83,31 +98,22 @@ internal static class UiTextAdapter
 
 internal static class UiInputAdapter
 {
-    public static string GetText(InputField legacyInput, TMP_InputField tmpInput)
+    public static string GetText(TMP_InputField tmpInput)
     {
         if (tmpInput != null)
             return tmpInput.text;
 
-        if (legacyInput != null)
-            return legacyInput.text;
-
         return string.Empty;
     }
 
-    public static void SetText(InputField legacyInput, TMP_InputField tmpInput, string value)
+    public static void SetText(TMP_InputField tmpInput, string value)
     {
-        if (legacyInput != null)
-            legacyInput.text = value;
-
         if (tmpInput != null)
             tmpInput.text = value;
     }
 
-    public static void SetInteractable(InputField legacyInput, TMP_InputField tmpInput, bool isInteractable)
+    public static void SetInteractable(TMP_InputField tmpInput, bool isInteractable)
     {
-        if (legacyInput != null)
-            legacyInput.interactable = isInteractable;
-
         if (tmpInput != null)
             tmpInput.interactable = isInteractable;
     }

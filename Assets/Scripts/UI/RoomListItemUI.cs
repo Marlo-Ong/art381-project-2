@@ -8,13 +8,9 @@ public class RoomListItemUI : MonoBehaviour
     [SerializeField] private Button selectButton;
     [SerializeField] private GameObject selectedState;
     [SerializeField] private TMP_Text roomNameTmpText;
-    [SerializeField] private Text roomNameText;
     [SerializeField] private TMP_Text ownerNameTmpText;
-    [SerializeField] private Text ownerNameText;
     [SerializeField] private TMP_Text totalTokensTmpText;
-    [SerializeField] private Text totalTokensText;
     [SerializeField] private TMP_Text updatedAtTmpText;
-    [SerializeField] private Text updatedAtText;
 
     private RoomDto roomData;
     private Action<RoomDto, RoomListItemUI> onSelected;
@@ -36,10 +32,10 @@ public class RoomListItemUI : MonoBehaviour
         roomData = room;
         onSelected = onSelectedCallback;
 
-        UiTextAdapter.SetText(roomNameText, roomNameTmpText, RoomUiFormatter.GetRoomName(roomData));
-        UiTextAdapter.SetText(ownerNameText, ownerNameTmpText, RoomUiFormatter.GetOwnerName(roomData));
-        UiTextAdapter.SetText(totalTokensText, totalTokensTmpText, roomData != null ? roomData.totalTokens.ToString() : "0");
-        UiTextAdapter.SetText(updatedAtText, updatedAtTmpText, roomData != null ? ApiDateUtils.FormatIsoForDisplay(roomData.updatedAt) : "N/A");
+        UiTextAdapter.SetText(roomNameTmpText, RoomUiFormatter.GetRoomName(roomData));
+        UiTextAdapter.SetText(ownerNameTmpText, RoomUiFormatter.GetOwnerName(roomData));
+        UiTextAdapter.SetText(totalTokensTmpText, roomData != null ? roomData.totalTokens.ToString() : "0");
+        UiTextAdapter.SetText(updatedAtTmpText, roomData != null ? ApiDateUtils.FormatIsoForDisplay(roomData.updatedAt) : "N/A");
         SetSelected(false);
     }
 

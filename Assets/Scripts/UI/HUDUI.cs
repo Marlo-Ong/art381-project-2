@@ -6,13 +6,17 @@ public class HUDUI : MonoBehaviour
 {
     [SerializeField] private GameObject root;
     [SerializeField] private TMP_Text playerNameTmpText;
-    [SerializeField] private Text playerNameText;
     [SerializeField] private TMP_Text tokenCountTmpText;
-    [SerializeField] private Text tokenCountText;
     [SerializeField] private Button endRunButton;
 
     private GameManager gameManager;
     private PlayerSession playerSession;
+
+    private void Awake()
+    {
+        if (endRunButton != null)
+            endRunButton.onClick.AddListener(OnEndRunPressed);
+    }
 
     public void Initialize(GameManager manager, PlayerSession session)
     {
@@ -30,6 +34,9 @@ public class HUDUI : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (endRunButton != null)
+            endRunButton.onClick.RemoveListener(OnEndRunPressed);
+
         if (playerSession != null)
         {
             playerSession.PlayerNameChanged -= HandlePlayerNameChanged;
@@ -49,10 +56,18 @@ public class HUDUI : MonoBehaviour
     public void OnEndRunPressed()
     {
         if (endRunButton != null && !endRunButton.interactable)
+        {
+            LogFailedRequest(nameof(OnEndRunPressed), "The end run button is not currently interactable.");
             return;
+        }
 
-        if (gameManager != null)
-            gameManager.EndRun();
+        if (gameManager == null)
+        {
+            LogFailedRequest(nameof(OnEndRunPressed), "GameManager reference is missing.");
+            return;
+        }
+
+        gameManager.EndRun();
     }
 
     private void Refresh()
@@ -60,8 +75,8 @@ public class HUDUI : MonoBehaviour
         if (playerSession == null)
             return;
 
-        UiTextAdapter.SetText(playerNameText, playerNameTmpText, playerSession.PlayerName);
-        UiTextAdapter.SetText(tokenCountText, tokenCountTmpText, playerSession.CurrentRunTokens.ToString());
+        UiTextAdapter.SetText(playerNameTmpText, playerSession.PlayerName);
+        UiTextAdapter.SetText(tokenCountTmpText, playerSession.CurrentRunTokens.ToString());
     }
 
     private void HandlePlayerNameChanged(string _)
@@ -72,5 +87,10 @@ public class HUDUI : MonoBehaviour
     private void HandleTokenCountChanged(int _)
     {
         Refresh();
+    }
+
+    private void LogFailedRequest(string requestName, string reason)
+    {
+        UiRequestLogger.LogFailedRequest(this, nameof(HUDUI), requestName, reason);
     }
 }

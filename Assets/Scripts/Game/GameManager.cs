@@ -28,10 +28,22 @@ public class GameManager : MonoBehaviour
     private void Awake()
     {
         if (playerSession == null)
-            playerSession = FindFirstObjectByType<PlayerSession>();
+            playerSession = FindFirstObjectByType<PlayerSession>(FindObjectsInactive.Include);
 
         if (roomService == null)
-            roomService = FindFirstObjectByType<MockApiRoomService>();
+            roomService = FindFirstObjectByType<MockApiRoomService>(FindObjectsInactive.Include);
+
+        if (startMenuUI == null)
+            startMenuUI = FindFirstObjectByType<StartMenuUI>(FindObjectsInactive.Include);
+
+        if (hudUI == null)
+            hudUI = FindFirstObjectByType<HUDUI>(FindObjectsInactive.Include);
+
+        if (sessionEndUI == null)
+            sessionEndUI = FindFirstObjectByType<SessionEndUI>(FindObjectsInactive.Include);
+
+        if (roomBrowserUI == null)
+            roomBrowserUI = FindFirstObjectByType<RoomBrowserUI>(FindObjectsInactive.Include);
     }
 
     private void Start()
@@ -53,8 +65,17 @@ public class GameManager : MonoBehaviour
 
     public void BeginRun(string requestedPlayerName)
     {
-        if (isSubmissionInFlight || playerSession == null)
+        if (isSubmissionInFlight)
+        {
+            LogFailedRequest(nameof(BeginRun), "Another submission is already in flight.");
             return;
+        }
+
+        if (playerSession == null)
+        {
+            LogFailedRequest(nameof(BeginRun), "PlayerSession reference is missing.");
+            return;
+        }
 
         playerSession.SetPlayerName(requestedPlayerName);
         playerSession.ResetRunTokens();
@@ -66,7 +87,10 @@ public class GameManager : MonoBehaviour
     public void EndRun()
     {
         if (currentState != PrototypeState.Playing)
+        {
+            LogFailedRequest(nameof(EndRun), $"The current state is {currentState}, not {PrototypeState.Playing}.");
             return;
+        }
 
         SetState(PrototypeState.SessionEnd);
         if (sessionEndUI != null)
@@ -75,11 +99,27 @@ public class GameManager : MonoBehaviour
 
     public void RequestCreateRoom(string requestedRoomName)
     {
-        if (currentState != PrototypeState.SessionEnd || isSubmissionInFlight || playerSession == null)
+        if (currentState != PrototypeState.SessionEnd)
+        {
+            LogFailedRequest(nameof(RequestCreateRoom), $"The current state is {currentState}, not {PrototypeState.SessionEnd}.");
             return;
+        }
+
+        if (isSubmissionInFlight)
+        {
+            LogFailedRequest(nameof(RequestCreateRoom), "Another submission is already in flight.");
+            return;
+        }
+
+        if (playerSession == null)
+        {
+            LogFailedRequest(nameof(RequestCreateRoom), "PlayerSession reference is missing.");
+            return;
+        }
 
         if (roomService == null)
         {
+            LogFailedRequest(nameof(RequestCreateRoom), "Room service reference is missing.");
             if (sessionEndUI != null)
                 sessionEndUI.SetStatus("Room service reference is missing.", true);
 
@@ -88,6 +128,7 @@ public class GameManager : MonoBehaviour
 
         if (!playerSession.HasTokens)
         {
+            LogFailedRequest(nameof(RequestCreateRoom), "The player has no tokens to submit.");
             if (sessionEndUI != null)
                 sessionEndUI.SetStatus("Collect tokens before creating a room.", true);
 
@@ -99,11 +140,27 @@ public class GameManager : MonoBehaviour
 
     public void OpenRoomBrowser()
     {
-        if (currentState != PrototypeState.SessionEnd || isSubmissionInFlight || playerSession == null)
+        if (currentState != PrototypeState.SessionEnd)
+        {
+            LogFailedRequest(nameof(OpenRoomBrowser), $"The current state is {currentState}, not {PrototypeState.SessionEnd}.");
             return;
+        }
+
+        if (isSubmissionInFlight)
+        {
+            LogFailedRequest(nameof(OpenRoomBrowser), "Another submission is already in flight.");
+            return;
+        }
+
+        if (playerSession == null)
+        {
+            LogFailedRequest(nameof(OpenRoomBrowser), "PlayerSession reference is missing.");
+            return;
+        }
 
         if (roomService == null)
         {
+            LogFailedRequest(nameof(OpenRoomBrowser), "Room service reference is missing.");
             if (sessionEndUI != null)
                 sessionEndUI.SetStatus("Room service reference is missing.", true);
 
@@ -112,6 +169,7 @@ public class GameManager : MonoBehaviour
 
         if (!playerSession.HasTokens)
         {
+            LogFailedRequest(nameof(OpenRoomBrowser), "The player has no tokens to deposit.");
             if (sessionEndUI != null)
                 sessionEndUI.SetStatus("Collect tokens before depositing to a room.", true);
 
@@ -125,8 +183,17 @@ public class GameManager : MonoBehaviour
 
     public void CloseRoomBrowser()
     {
-        if (currentState != PrototypeState.RoomBrowser || isSubmissionInFlight)
+        if (currentState != PrototypeState.RoomBrowser)
+        {
+            LogFailedRequest(nameof(CloseRoomBrowser), $"The current state is {currentState}, not {PrototypeState.RoomBrowser}.");
             return;
+        }
+
+        if (isSubmissionInFlight)
+        {
+            LogFailedRequest(nameof(CloseRoomBrowser), "A submission is still in flight.");
+            return;
+        }
 
         SetState(PrototypeState.SessionEnd);
         if (sessionEndUI != null)
@@ -135,11 +202,27 @@ public class GameManager : MonoBehaviour
 
     public void DepositToSelectedRoom(RoomDto selectedRoom)
     {
-        if (currentState != PrototypeState.RoomBrowser || isSubmissionInFlight || playerSession == null)
+        if (currentState != PrototypeState.RoomBrowser)
+        {
+            LogFailedRequest(nameof(DepositToSelectedRoom), $"The current state is {currentState}, not {PrototypeState.RoomBrowser}.");
             return;
+        }
+
+        if (isSubmissionInFlight)
+        {
+            LogFailedRequest(nameof(DepositToSelectedRoom), "Another submission is already in flight.");
+            return;
+        }
+
+        if (playerSession == null)
+        {
+            LogFailedRequest(nameof(DepositToSelectedRoom), "PlayerSession reference is missing.");
+            return;
+        }
 
         if (roomService == null)
         {
+            LogFailedRequest(nameof(DepositToSelectedRoom), "Room service reference is missing.");
             if (roomBrowserUI != null)
                 roomBrowserUI.SetStatus("Room service reference is missing.", true);
 
@@ -148,6 +231,7 @@ public class GameManager : MonoBehaviour
 
         if (selectedRoom == null)
         {
+            LogFailedRequest(nameof(DepositToSelectedRoom), "No room was selected.");
             if (roomBrowserUI != null)
                 roomBrowserUI.SetStatus("Select a room before depositing.", true);
 
@@ -156,6 +240,7 @@ public class GameManager : MonoBehaviour
 
         if (!playerSession.HasTokens)
         {
+            LogFailedRequest(nameof(DepositToSelectedRoom), "The player has no tokens to deposit.");
             if (roomBrowserUI != null)
                 roomBrowserUI.SetStatus("No tokens are available to deposit.", true);
 
@@ -194,8 +279,10 @@ public class GameManager : MonoBehaviour
 
         if (!string.IsNullOrWhiteSpace(requestError) || createdRoom == null)
         {
+            var failureReason = string.IsNullOrWhiteSpace(requestError) ? "Room creation failed." : requestError;
+            LogFailedRequest(nameof(RequestCreateRoom), failureReason);
             if (sessionEndUI != null)
-                sessionEndUI.SetStatus(string.IsNullOrWhiteSpace(requestError) ? "Room creation failed." : requestError, true);
+                sessionEndUI.SetStatus(failureReason, true);
 
             yield break;
         }
@@ -224,8 +311,10 @@ public class GameManager : MonoBehaviour
 
         if (!string.IsNullOrWhiteSpace(requestError) || updatedRoom == null)
         {
+            var failureReason = string.IsNullOrWhiteSpace(requestError) ? "Deposit failed." : requestError;
+            LogFailedRequest(nameof(DepositToSelectedRoom), failureReason);
             if (roomBrowserUI != null)
-                roomBrowserUI.SetStatus(string.IsNullOrWhiteSpace(requestError) ? "Deposit failed." : requestError, true);
+                roomBrowserUI.SetStatus(failureReason, true);
 
             yield break;
         }
@@ -300,5 +389,10 @@ public class GameManager : MonoBehaviour
         return string.IsNullOrWhiteSpace(requestedRoomName)
             ? playerSession.PlayerName
             : requestedRoomName.Trim();
+    }
+
+    private void LogFailedRequest(string requestName, string reason)
+    {
+        UiRequestLogger.LogFailedRequest(this, nameof(GameManager), requestName, reason);
     }
 }
